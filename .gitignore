@@ -1,0 +1,54 @@
+# Binaries and build output
+/server
+/bin/
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test and coverage artifacts
+*.test
+*.out
+coverage.txt
+coverage.html
+
+# Go workspace files (local-only, module is defined by go.mod)
+go.work
+go.work.sum
+
+# Dependency directory — commit it only if the project goes vendored
+# vendor/
+
+# Configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Local MongoDB data
+/data/db/
+
+# Local SQLite database (and its WAL sidecar files)
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+*.log
+logs/
+
+# Live reload (air) build directory
+tmp/
+
+# Editors and IDEs
+.idea/
+.vscode/
+.fleet/
+*.swp
+*~
+
+# macOS and Windows
+.DS_Store
+Thumbs.db
+desktop.ini
