@@ -1,7 +1,7 @@
 package note
 
 import (
-	"fmt"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -32,6 +32,7 @@ func (h *Handler) GetNotesHandler(c *gin.Context) {
 
 func (h *Handler) GetNoteByIDHandler(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
+
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "invalid id: must be an integer",
@@ -39,21 +40,51 @@ func (h *Handler) GetNoteByIDHandler(c *gin.Context) {
 		return
 	}
 
-	note, err := h.service.GetNotesByID(c.Request.Context(), id)
-	if err != nil {
+	note, err := h.service.GetNoteByID(c.Request.Context(), int64(id))
+	switch {
+	case err == nil:
+		c.JSON(http.StatusOK, note)
+
+	case errors.Is(err, ErrNotFound):
 		c.JSON(http.StatusNotFound, gin.H{
-			"message": fmt.Sprintf("Note of ID %v not found.", id),
+			"error": "note not found",
+		})
+
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "internal server error",
+		})
+	}
+}
+
+func (h *Handler) CreateNoteHandler(c *gin.Context) {
+	var req CreateNoteRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid request body",
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, note)
-}
+	id, err := h.service.CreateNote(c.Request.Context(), req)
+	switch {
+	case err == nil:
+		c.JSON(http.StatusCreated, gin.H{
+			"id": id,
+		})
 
-func (h *Handler) CreateNoteHandler(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, gin.H{
-		"message": "API Not Implemented",
-	})
+	case errors.Is(err, ErrInvalidTitle) || errors.Is(err, ErrInvalidContent):
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "internal server error",
+		})
+	}
+
 }
 
 func (h *Handler) ModifyNoteHandler(c *gin.Context) {

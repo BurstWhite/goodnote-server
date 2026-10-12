@@ -24,12 +24,11 @@ func (repo *Repository) FindNotes(
 		ctx,
 		"SELECT id, title, content FROM notes",
 	)
-
-	defer rows.Close()
-
 	if err != nil {
 		return nil, err
 	}
+
+	defer rows.Close()
 
 	for rows.Next() {
 		var note Note
@@ -47,9 +46,9 @@ func (repo *Repository) FindNotes(
 	return notes, nil
 }
 
-func (repo *Repository) FindNotesByID(
+func (repo *Repository) FindNoteByID(
 	ctx context.Context,
-	id int,
+	id int64,
 ) (*Note, error) {
 	var note Note
 	row := repo.db.QueryRowContext(
@@ -60,8 +59,35 @@ func (repo *Repository) FindNotesByID(
 
 	err := row.Scan(&note.ID, &note.Title, &note.Content)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	}
 
 	return &note, nil
+}
+
+func (repo *Repository) CreateNote(
+	ctx context.Context,
+	req CreateNoteRequest,
+) (int64, error) {
+
+	res, err := repo.db.ExecContext(
+		ctx,
+		"INSERT INTO notes (title, content) VALUES (?, ?)",
+		req.Title,
+		req.Content,
+	)
+
+	if err != nil {
+		return -1, err
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return -1, err
+	}
+
+	return id, nil
 }
